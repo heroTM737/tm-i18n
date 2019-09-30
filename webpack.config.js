@@ -1,7 +1,7 @@
 module.exports = {
   resolve: {
     alias: {
-      '@': require('path').resolve(__dirname, 'src/renderer') // change this to your folder path
+      '@': require('path').resolve(__dirname, 'src/renderer')
     }
   },
   module: {

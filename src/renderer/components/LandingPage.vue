@@ -8,34 +8,32 @@
                 {{item}}
             </v-btn>
         </div>
+        {{test}}
     </div>
 </template>
 
 <script>
-import fs from 'fs'
+import { mapState } from 'vuex'
 
 export default {
   name: 'landing-page',
   data () {
     return {
       recentList: [
-        'E:/Project/fptai-v4-console/frontend/src/locales'
+        'src/locales'
       ]
     }
+  },
+  computed: {
+    ...mapState({
+      test: state => state
+    })
   },
   methods: {
     readDir (index) {
       let source = this.recentList[index]
-      fs.readdir(source, (error, dir) => {
-        if (error) {
-          console.error(error)
-          return
-        }
-        for (let fileName of dir) {
-          let fileContent = fs.readFileSync(source + '/' + fileName, 'utf8')
-          console.log(JSON.parse(fileContent))
-        }
-      })
+      this.$store.commit('activeSource', source)
+      this.$nextTick(() => this.$router.push('/editor'))
     }
   }
 }
