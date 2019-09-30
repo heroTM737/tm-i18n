@@ -5,17 +5,18 @@ import router from './router'
 import store from './store'
 // plugins
 import i18n from './plugins/i18n'
-import './plugins/vuetify'
+import vuetify from './plugins/vuetify'
 import './plugins/vue-notification'
 
 if (!process.env.IS_WEB) Vue.use(require('vue-electron'))
 Vue.config.productionTip = false
+Vue.config.silent = true
 
 /* eslint-disable no-new */
 new Vue({
-  components: { App },
   router,
   store,
   i18n,
-  template: '<App/>'
+  vuetify,
+  render: h => h(App)
 }).$mount('#app')

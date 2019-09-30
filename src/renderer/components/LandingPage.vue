@@ -1,15 +1,12 @@
 <template>
-    <div id="wrapper">
+    <div id="wrapper" class="pa-3">
         <div>
-            <v-btn @click="readDir">Read Vuetify</v-btn>
+            Pick a source
         </div>
         <div>
-            Pick folder
-        </div>
-        <div>
-            <div v-for="(item, index) in recentList" :key="index" @click="readDir(index)">
+            <v-btn v-for="(item, index) in recentList" :key="index" @click="readDir(index)">
                 {{item}}
-            </div>
+            </v-btn>
         </div>
     </div>
 </template>
