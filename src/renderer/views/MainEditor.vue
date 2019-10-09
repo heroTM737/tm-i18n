@@ -2,11 +2,13 @@
     <v-row no-gutters>
         <v-col cols="3">
             <div class="left">
-                <v-text-field
-                        label="Search"
-                        v-model="search"
-                        append-icon="mdi-search-web"
-                ></v-text-field>
+                <div class="px-3">
+                    <v-text-field
+                            label="Search"
+                            v-model="search"
+                            append-icon="mdi-search-web"
+                    ></v-text-field>
+                </div>
                 <div class="tree-container">
                     <v-treeview
                             :search="search"
@@ -19,19 +21,37 @@
                             active-class="active"
                             class="tree"
                     >
+                        <template slot="append" slot-scope="props">
+                            <v-menu>
+                                <template v-slot:activator="{ on }">
+                                    <v-icon small v-on="on">mdi-plus-circle</v-icon>
+                                </template>
+                                <v-list>
+                                    <v-list-item><v-list-item-title>Add item</v-list-item-title></v-list-item>
+                                    <v-list-item><v-list-item-title>Add folder</v-list-item-title></v-list-item>
+                                    <v-list-item><v-list-item-title>Rename</v-list-item-title></v-list-item>
+                                </v-list>
+                            </v-menu>
+                        </template>
                     </v-treeview>
                 </div>
             </div>
         </v-col>
         <v-col cols="9">
-            <v-row justify="start">
-                <div class="copy-btn mr-3" v-for="button in buttonList" :key="button">{{button}}</div>
-            </v-row>
-            <div v-for="(locale, index) in list" :key="locale.name">
-                <v-text-field
-                        :label="locale.name.split('.')[0]"
-                        v-model="listModel[index]"
-                ></v-text-field>
+            <div class="right">
+                <v-row style="margin: 0">
+                    <v-row justify="start" class="btn-group">
+                        <div class="copy-btn mr-3" v-for="button in buttonList" :key="button">{{button}}</div>
+                    </v-row>
+                    <v-btn color="primary" @click="save">save</v-btn>
+                </v-row>
+
+                <div v-for="(locale, index) in list" :key="locale.name">
+                    <v-text-field
+                            :label="locale.name.split('.')[0]"
+                            v-model="listModel[index]"
+                    ></v-text-field>
+                </div>
             </div>
         </v-col>
     </v-row>
@@ -130,14 +150,41 @@ export default {
         this.listModel[i] = root
       }
       this.$forceUpdate()
+    },
+    save () {
+      let count = 0
+      let split = this.id.split('.')
+      for (let i = 0; i < this.list.length; i++) {
+        let locale = this.list[i]
+        let root = locale.data
+        for (let j = 0; j < split.length - 1; i++) {
+          root = root[split[j]]
+        }
+        root[split[split.length - 1]] = this.listModel[i]
+        fs.writeFile(
+          this.activeSource + '/' + locale.name,
+          JSON.stringify(locale.data),
+          error => {
+            if (error) {
+              console.error(error)
+            }
+            count++
+            if (count === this.list.length) {
+              this.initEditor()
+            }
+          }
+        )
+      }
     }
   },
   watch: {
     activeSource: {
       immediate: true,
-      handler: function () {
-        this.initEditor()
-      }
+      handler:
+
+        function () {
+          this.initEditor()
+        }
     }
   }
 }
@@ -152,16 +199,46 @@ export default {
     }
 
     .left {
-        border-right: 1px solid #ccc;
-        margin-right: 15px;
+        box-shadow: 5px 0px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    .right {
+        padding: 15px;
+    }
+
+    .btn-group {
+        min-height: 30px;
+        padding-bottom: 10px;
+        margin: 0;
     }
 
     .tree-container {
-        height: calc(100vh - 300px);
+        height: calc(100vh - 118px);
         overflow: auto;
+        /* width */
+        &::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        /* Track */
+        &::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        /* Handle */
+        &::-webkit-scrollbar-thumb {
+            background: #888;
+        }
+
+        /* Handle on hover */
+        &::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
     }
 
-    .tree::v-deep .active {
-        background: #c6c6c6;
+    .tree::v-deep {
+        .active {
+            background: #c6c6c6;
+        }
     }
 </style>
