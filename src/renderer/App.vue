@@ -1,6 +1,6 @@
 <template>
-    <v-app id="app" :light="true">
-      <v-app-bar app>
+    <v-app id="app" dark>
+      <v-app-bar app dense>
         <router-link to="/" class="mr-5">Home</router-link>
         <router-link to="/editor">Editor</router-link>
       </v-app-bar>
