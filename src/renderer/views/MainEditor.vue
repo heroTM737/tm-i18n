@@ -21,15 +21,26 @@
                             active-class="active"
                             class="tree"
                     >
-                        <template slot="append" slot-scope="props">
+                        <template slot="append" slot-scope="{item}">
                             <v-menu>
                                 <template v-slot:activator="{ on }">
                                     <v-icon small v-on="on">mdi-plus-circle</v-icon>
                                 </template>
                                 <v-list>
-                                    <v-list-item><v-list-item-title>Add item</v-list-item-title></v-list-item>
-                                    <v-list-item><v-list-item-title>Add folder</v-list-item-title></v-list-item>
-                                    <v-list-item><v-list-item-title>Rename</v-list-item-title></v-list-item>
+                                    <v-list-item-group>
+                                        <v-list-item>
+                                            <v-list-item-title>Add item</v-list-item-title>
+                                        </v-list-item>
+                                        <v-list-item>
+                                            <v-list-item-title>Add folder</v-list-item-title>
+                                        </v-list-item>
+                                        <v-list-item @click="editItem(item)">
+                                            <v-list-item-title>Edit</v-list-item-title>
+                                        </v-list-item>
+                                        <v-list-item @click="deleteItem(item)">
+                                            <v-list-item-title>Delete</v-list-item-title>
+                                        </v-list-item>
+                                    </v-list-item-group>
                                 </v-list>
                             </v-menu>
                         </template>
@@ -54,6 +65,7 @@
                 </div>
             </div>
         </v-col>
+        <ItemEditor ref="ItemEditor" @update="updateItem"></ItemEditor>
     </v-row>
 </template>
 
@@ -61,9 +73,11 @@
 import fs from 'fs'
 import { mapState } from 'vuex'
 import _ from 'lodash'
+import ItemEditor from '@/views/ItemEditor'
 
 export default {
   name: 'MainEditor',
+  components: { ItemEditor },
   data () {
     return {
       treeData: [],
@@ -71,7 +85,8 @@ export default {
       listModel: [],
       search: '',
       id: null,
-      buttonList: []
+      buttonList: [],
+      editingItem: null
     }
   },
   computed: {
@@ -82,34 +97,37 @@ export default {
   methods: {
     initEditor () {
       if (this.activeSource) {
-        fs.readdir(this.activeSource, (error, dir) => {
-          if (error) {
-            console.error(error)
-            return
-          }
-          let list = []
-          let listModel = []
-          for (let i in dir) {
-            let fileContent = fs.readFileSync(this.activeSource + '/' + dir[i], 'utf8')
-            list.push({
-              name: dir[i],
-              data: JSON.parse(fileContent)
-            })
-            listModel.push('')
-          }
-          let treeData = {}
-          for (let i in dir) {
-            treeData = _.merge(treeData, this.buildTree(list[i].data, ''))
-          }
-          let treeDataList = []
-          for (let i in treeData) {
-            treeDataList.push(treeData[i])
-          }
-          this.list = list
-          this.listModel = listModel
-          this.treeData = treeDataList
-        })
+        let dir = fs.readdirSync(this.activeSource)
+        let list = []
+        let listModel = []
+        for (let i in dir) {
+          let fileContent = fs.readFileSync(this.activeSource + '/' + dir[i], 'utf8')
+          list.push({
+            name: dir[i],
+            data: JSON.parse(fileContent)
+          })
+          listModel.push('')
+        }
+        this.list = list
+        this.listModel = listModel
+        this.buildTreeData()
+        if (this.id) {
+          this.itemClick([this.id])
+          this.$forceUpdate()
+        }
       }
+    },
+    buildTreeData () {
+      let treeData = {}
+      for (let i in this.list) {
+        treeData = _.merge(treeData, this.buildTree(this.list[i].data, ''))
+      }
+      let treeDataList = []
+      for (let i in treeData) {
+        treeDataList.push(treeData[i])
+      }
+
+      this.treeData = treeDataList
     },
     buildTree (root, parentId) {
       let data = []
@@ -126,6 +144,9 @@ export default {
       return data
     },
     itemClick (item) {
+      if (item.length < 1) {
+        return
+      }
       let id = item[0]
       this.id = id
       let split = id.split('.')
@@ -144,6 +165,7 @@ export default {
           if (root[key]) {
             root = root[key]
           } else {
+            root = ''
             break
           }
         }
@@ -157,7 +179,7 @@ export default {
       for (let i = 0; i < this.list.length; i++) {
         let locale = this.list[i]
         let root = locale.data
-        for (let j = 0; j < split.length - 1; i++) {
+        for (let j = 0; j < split.length - 1; j++) {
           root = root[split[j]]
         }
         root[split[split.length - 1]] = this.listModel[i]
@@ -174,6 +196,59 @@ export default {
             }
           }
         )
+      }
+    },
+    editItem (item) {
+      this.editingItem = item
+      this.$refs.ItemEditor.open(item)
+    },
+    updateItem (item) {
+      let split = this.editingItem.id.split('.')
+      this.addItem(item, split[split.length - 1])
+      this.deleteItem(this.editingItem)
+      this.buildTreeData()
+      let itemId = item.parent ? item.parent + '.' + item.name : item.name
+      this.itemClick([itemId])
+      this.$forceUpdate()
+    },
+    deleteItem (item) {
+      let id = item.id
+      let split = id.split('.')
+      for (let root of this.list) {
+        let rootItem = root.data
+        let notFound = false
+        for (let i = 0; i < split.length - 1; i++) {
+          if (rootItem[split[i]] !== undefined) {
+            rootItem = rootItem[split[i]]
+          } else if (rootItem[split[i]] === null) {
+            delete rootItem[split[i]]
+            notFound = true
+            break
+          } else {
+            notFound = true
+            break
+          }
+        }
+        if (!notFound) {
+          delete rootItem[split[split.length - 1]]
+        }
+      }
+    },
+    addItem ({ parent, name }, cloneKey) {
+      let split = parent.split('.')
+      for (let root of this.list) {
+        let rootItem = root.data
+        if (parent) {
+          for (let i = 0; i < split.length; i++) {
+            if (rootItem[split[i]]) {
+              rootItem = rootItem[split[i]]
+            } else {
+              console.log('parent not found')
+              break
+            }
+          }
+        }
+        rootItem[name] = cloneKey ? rootItem[cloneKey] : ''
       }
     }
   },
