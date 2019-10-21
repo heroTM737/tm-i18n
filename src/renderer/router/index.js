@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import LandingPage from '@/components/LandingPage'
-import MainEditor from '@/views/MainEditor'
+import MainEditor from '@/views/MainEditor/MainEditor'
 
 Vue.use(Router)
 

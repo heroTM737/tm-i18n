@@ -1,75 +1,3 @@
-<template>
-    <v-row no-gutters>
-        <v-col cols="3">
-            <div class="left">
-                <div class="px-3">
-                    <v-text-field
-                            label="Search"
-                            v-model="search"
-                            append-icon="mdi-search-web"
-                    ></v-text-field>
-                </div>
-                <div class="tree-container">
-                    <v-treeview
-                            :search="search"
-                            :items="treeData"
-                            dense
-                            hoverable
-                            :activatable="true"
-                            :open-on-click="true"
-                            @update:active="itemClick"
-                            active-class="active"
-                            class="tree"
-                    >
-                        <template slot="append" slot-scope="{item}">
-                            <v-menu>
-                                <template v-slot:activator="{ on }">
-                                    <v-icon small v-on="on">mdi-plus-circle</v-icon>
-                                </template>
-                                <v-list>
-                                    <v-list-item-group>
-                                        <v-list-item>
-                                            <v-list-item-title>Add item</v-list-item-title>
-                                        </v-list-item>
-                                        <v-list-item>
-                                            <v-list-item-title>Add folder</v-list-item-title>
-                                        </v-list-item>
-                                        <v-list-item @click="editItem(item)">
-                                            <v-list-item-title>Edit</v-list-item-title>
-                                        </v-list-item>
-                                        <v-list-item @click="deleteItem(item)">
-                                            <v-list-item-title>Delete</v-list-item-title>
-                                        </v-list-item>
-                                    </v-list-item-group>
-                                </v-list>
-                            </v-menu>
-                        </template>
-                    </v-treeview>
-                </div>
-            </div>
-        </v-col>
-        <v-col cols="9">
-            <div class="right">
-                <v-row style="margin: 0">
-                    <v-row justify="start" class="btn-group">
-                        <div class="copy-btn mr-3" v-for="button in buttonList" :key="button">{{button}}</div>
-                    </v-row>
-                    <v-btn color="primary" @click="save">save</v-btn>
-                </v-row>
-
-                <div v-for="(locale, index) in list" :key="locale.name">
-                    <v-text-field
-                            :label="locale.name.split('.')[0]"
-                            v-model="listModel[index]"
-                    ></v-text-field>
-                </div>
-            </div>
-        </v-col>
-        <ItemEditor ref="ItemEditor" @update="updateItem"></ItemEditor>
-    </v-row>
-</template>
-
-<script>
 import fs from 'fs'
 import { mapState } from 'vuex'
 import _ from 'lodash'
@@ -86,7 +14,10 @@ export default {
       search: '',
       id: null,
       buttonList: [],
-      editingItem: null
+      editingItem: null,
+      contextMenuShow: false,
+      x: 0,
+      y: 0
     }
   },
   computed: {
@@ -250,6 +181,15 @@ export default {
         }
         rootItem[name] = cloneKey ? rootItem[cloneKey] : ''
       }
+    },
+    showContextMenu (e) {
+      e.preventDefault()
+      this.contextMenuShow = true
+      this.x = e.clientX
+      this.y = e.clientY
+      this.$nextTick(() => {
+        this.contextMenuShow = true
+      })
     }
   },
   watch: {
@@ -263,57 +203,3 @@ export default {
     }
   }
 }
-</script>
-
-<style scoped lang="scss">
-    .copy-btn {
-        border-radius: 5px;
-        width: fit-content;
-        background: pink;
-        padding: 5px;
-    }
-
-    .left {
-        box-shadow: 5px 0px 5px rgba(0, 0, 0, 0.3);
-    }
-
-    .right {
-        padding: 15px;
-    }
-
-    .btn-group {
-        min-height: 30px;
-        padding-bottom: 10px;
-        margin: 0;
-    }
-
-    .tree-container {
-        height: calc(100vh - 118px);
-        overflow: auto;
-        /* width */
-        &::-webkit-scrollbar {
-            width: 10px;
-        }
-
-        /* Track */
-        &::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-
-        /* Handle */
-        &::-webkit-scrollbar-thumb {
-            background: #888;
-        }
-
-        /* Handle on hover */
-        &::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
-    }
-
-    .tree::v-deep {
-        .active {
-            background: #c6c6c6;
-        }
-    }
-</style>
