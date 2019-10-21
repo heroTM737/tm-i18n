@@ -105,7 +105,6 @@ export default {
       this.$forceUpdate()
     },
     save () {
-      let count = 0
       let split = this.id.split('.')
       for (let i = 0; i < this.list.length; i++) {
         let locale = this.list[i]
@@ -114,6 +113,13 @@ export default {
           root = root[split[j]]
         }
         root[split[split.length - 1]] = this.listModel[i]
+      }
+      this.saveToDisk()
+    },
+    saveToDisk () {
+      let count = 0
+      for (let i = 0; i < this.list.length; i++) {
+        let locale = this.list[i]
         fs.writeFile(
           this.activeSource + '/' + locale.name,
           JSON.stringify(locale.data),
@@ -129,20 +135,36 @@ export default {
         )
       }
     },
+    addFolder () {
+      this.$refs.ItemEditor.open(null, true)
+    },
+    addItem () {
+      this.$refs.ItemEditor.open(null)
+    },
     editItem () {
       this.$refs.ItemEditor.open(this.editingItem)
     },
-    updateItem (item) {
+    updateItem (item, isAdd, isFolder) {
+      if (isFolder) {
+        this.addFolderToTree(item)
+        this.saveToDisk()
+        return
+      }
+      // TODO: check if item.id exist
+      if (!isAdd) {
+        this.deleteItem()
+      }
       let split = this.editingItem.id.split('.')
-      this.addItem(item, split[split.length - 1])
-      this.deleteItem(this.editingItem)
+      this.addItemToTree(item, split[split.length - 1])
       this.buildTreeData()
       let itemId = item.parent ? item.parent + '.' + item.name : item.name
       this.itemClick([itemId])
       this.$forceUpdate()
+      // TODO: auto fill in en locale
+      // this.$nextTick(this.save)
     },
-    deleteItem (item) {
-      let id = item.id
+    deleteItem () {
+      let id = this.editingItem.id
       let split = id.split('.')
       for (let root of this.list) {
         let rootItem = root.data
@@ -164,7 +186,7 @@ export default {
         }
       }
     },
-    addItem ({ parent, name }, cloneKey) {
+    addItemToTree ({ parent, name }, cloneKey) {
       let split = parent.split('.')
       for (let root of this.list) {
         let rootItem = root.data
@@ -181,6 +203,23 @@ export default {
         rootItem[name] = cloneKey ? rootItem[cloneKey] : ''
       }
     },
+    addFolderToTree ({ parent, name }) {
+      let split = parent.split('.')
+      for (let root of this.list) {
+        let rootItem = root.data
+        if (parent) {
+          for (let i = 0; i < split.length; i++) {
+            if (rootItem[split[i]]) {
+              rootItem = rootItem[split[i]]
+            } else {
+              console.log('parent not found')
+              break
+            }
+          }
+        }
+        rootItem[name] = {}
+      }
+    },
     showContextMenu (e, item) {
       this.editingItem = item
       e.preventDefault()
@@ -190,6 +229,28 @@ export default {
       this.$nextTick(() => {
         this.contextMenuShow = true
       })
+    },
+    checkExist (parent, name, isFolder) {
+      let split = parent.split('.')
+      for (let root of this.list) {
+        let rootItem = root.data
+        let parentFound = true
+        if (parent) {
+          for (let i = 0; i < split.length; i++) {
+            if (rootItem[split[i]]) {
+              rootItem = rootItem[split[i]]
+            } else {
+              console.log('parent not found')
+              parentFound = false
+              break
+            }
+          }
+        }
+        if (parentFound && rootItem[name]) {
+          return true
+        }
+        return false
+      }
     }
   },
   watch: {
