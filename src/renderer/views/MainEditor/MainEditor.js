@@ -129,9 +129,8 @@ export default {
         )
       }
     },
-    editItem (item) {
-      this.editingItem = item
-      this.$refs.ItemEditor.open(item)
+    editItem () {
+      this.$refs.ItemEditor.open(this.editingItem)
     },
     updateItem (item) {
       let split = this.editingItem.id.split('.')
@@ -182,7 +181,8 @@ export default {
         rootItem[name] = cloneKey ? rootItem[cloneKey] : ''
       }
     },
-    showContextMenu (e) {
+    showContextMenu (e, item) {
+      this.editingItem = item
       e.preventDefault()
       this.contextMenuShow = true
       this.x = e.clientX
@@ -195,11 +195,9 @@ export default {
   watch: {
     activeSource: {
       immediate: true,
-      handler:
-
-        function () {
-          this.initEditor()
-        }
+      handler: function () {
+        this.initEditor()
+      }
     }
   }
 }

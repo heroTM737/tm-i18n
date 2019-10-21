@@ -13,6 +13,7 @@
                             v-model="name"
                     ></v-text-field>
                     <v-row justify="end" class="ma-0">
+                        <v-btn @click="cancel" class="mr-3">Cancel</v-btn>
                         <v-btn type="submit" color="primary">Save</v-btn>
                     </v-row>
                 </v-form>
@@ -47,6 +48,9 @@ export default {
         name: this.name,
         parent: this.parent
       })
+      this.show = false
+    },
+    cancel () {
       this.show = false
     }
   }
