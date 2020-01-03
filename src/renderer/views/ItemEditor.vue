@@ -1,17 +1,24 @@
 <template>
     <v-dialog v-model="show" width="650" persistent>
         <v-card>
-            <v-card-title>{{isFolder ? 'Folder' : 'Item'}} Editor</v-card-title>
+            <v-card-title>
+                {{isAdd ? 'Add' : 'Edit'}} {{isFolder ? 'Folder' : 'Item'}}
+            </v-card-title>
             <v-card-text>
-                <v-form @submit.prevent="submit">
+                <v-form @submit.prevent="submit" ref="form" v-model="formValid">
                     <v-text-field
-                            label="Parent"
-                            v-model="parent"
+                        :rules="[parentRules]"
+                        label="Parent"
+                        v-model="parent"
                     ></v-text-field>
+                    <v-checkbox
+                        label="Create parent if not exist"
+                        v-model="createParent"
+                    ></v-checkbox>
                     <v-text-field
-                            label="Name"
-                            v-model="name"
-                            :error-messages="nameExistMessage"
+                        :rules="[nameRules]"
+                        label="Name"
+                        v-model="name"
                     ></v-text-field>
                     <v-row justify="end" class="ma-0">
                         <v-btn @click="cancel" class="mr-3">Cancel</v-btn>
@@ -24,73 +31,85 @@
 </template>
 
 <script>
+
 export default {
-  name: 'ItemEditor',
-  props: {
-    checkExist: Function
-  },
-  data () {
-    return {
-      show: false,
-      name: null,
-      nameExistMessage: '',
-      parent: null,
-      isAdd: false,
-      isFolder: false
-    }
-  },
-  methods: {
-    open (item, isFolder) {
-      if (item) {
-        this.isAdd = false
-        this.name = item.name
-        let lastIndexOfDot = item.id.lastIndexOf('.')
-        if (lastIndexOfDot >= 0) {
-          this.parent = item.id.substring(0, lastIndexOfDot)
-        } else {
-          this.parent = ''
-        }
-      } else {
-        this.isAdd = true
-        this.name = ''
-        this.parent = ''
-        this.isFolder = !!isFolder
-      }
-      this.show = true
+    name: 'ItemEditor',
+    props: {
+        checkExist: Function
     },
-    submit () {
-      let item = {
-        name: this.name,
-        parent: this.parent
-      }
-      this.$emit('update', item, this.isAdd, this.isFolder)
-      this.show = false
-    },
-    cancel () {
-      this.show = false
-    }
-  },
-  watch: {
-    name (val) {
-      let name = val.trim()
-      if (!name) {
-        return
-      }
-      if (name.includes(' ')) {
-        this.nameExistMessage = 'Name should not contain space'
-        return
-      } else {
-        this.nameExistMessage = ''
-      }
-      if (this.checkExist) {
-        if (this.checkExist(this.parent, val.trim())) {
-          this.nameExistMessage = 'Name existed'
-        } else {
-          this.nameExistMessage = ''
+    data () {
+        return {
+            show: false,
+            formValid: false,
+            name: null,
+            parent: null,
+            createParent: false,
+            isAdd: false,
+            isFolder: false,
+            item: null
         }
-      }
+    },
+    methods: {
+        open (item, isFolder) {
+            if (item) {
+                this.item = item
+                this.isAdd = false
+                this.name = item.name
+                let lastIndexOfDot = item.id.lastIndexOf('.')
+                if (lastIndexOfDot >= 0) {
+                    this.parent = item.id.substring(0, lastIndexOfDot)
+                } else {
+                    this.parent = ''
+                }
+            } else {
+                this.item = null
+                this.isAdd = true
+                this.name = ''
+                this.parent = ''
+                this.isFolder = !!isFolder
+            }
+            this.show = true
+        },
+        submit () {
+            if (this.formValid) {
+                let item = {
+                    name: this.name,
+                    parent: this.parent
+                }
+                this.$emit('update', item, this.isAdd, this.isFolder)
+                this.show = false
+            } else {
+                this.$refs.form.validate()
+            }
+        },
+        cancel () {
+            this.show = false
+            this.$refs.form.reset()
+        },
+        parentRules (val) {
+            if (val.includes(' ')) {
+                return 'Parent should not contain space'
+            }
+            if (!this.createParent) {
+                if (this.checkExist && this.checkExist(this.parent, val)) {
+                    return 'Name existed'
+                }
+            }
+            return true
+        },
+        nameRules (val) {
+            if (val === undefined || val === null || val === '') {
+                return 'Name is required'
+            }
+            if (val.includes(' ')) {
+                return 'Name should not contain space'
+            }
+            if (this.checkExist && this.checkExist(this.parent, val)) {
+                return 'Name existed'
+            }
+            return true
+        }
     }
-  }
 }
 </script>
 

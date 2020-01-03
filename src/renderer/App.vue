@@ -12,7 +12,7 @@
 
 <script>
 export default {
-  name: 'tm-i18n'
+    name: 'tm-i18n'
 }
 </script>
 

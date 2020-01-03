@@ -1,66 +1,25 @@
 <template>
     <v-row no-gutters>
-        <v-col cols="3">
-            <div class="left">
-                <div class="px-3">
-                    <v-text-field
-                            label="Search"
-                            v-model="search"
-                            append-icon="mdi-magnify"
-                    ></v-text-field>
-                </div>
-                <div class="tree-container">
-                    <v-treeview
-                            :search="search"
-                            :items="treeData"
-                            dense
-                            hoverable
-                            :activatable="true"
-                            :open-on-click="true"
-                            @update:active="itemClick"
-                            active-class="active"
-                            class="tree"
-                    >
-                        <template slot="label" slot-scope="{item}" absolute>
-                            <div @contextmenu="showContextMenu($event, item)" class="node-label">{{item.name}}</div>
-                        </template>
-                    </v-treeview>
-                </div>
-                <v-menu v-model="contextMenuShow" :position-x="x" :position-y="y" absolute offset-y>
-                    <div class="context-menu">
-                        <div @click="addItem">
-                            <v-icon>mdi-music-note-plus</v-icon>
-                            Add item
-                        </div>
-                        <div @click="addFolder">
-                            <v-icon>mdi-folder-plus</v-icon>
-                            Add folder
-                        </div>
-                        <div @click="editItem">
-                            <v-icon>mdi-square-edit-outline</v-icon>
-                            Edit
-                        </div>
-                        <div @click="deleteItem">
-                            <v-icon>mdi-delete</v-icon>
-                            Delete
-                        </div>
-                    </div>
-                </v-menu>
-            </div>
+        <v-col cols="3" style="border-right: 1px solid black">
+            <TreeView></TreeView>
         </v-col>
         <v-col cols="9">
-            <div class="right" v-if="id">
+            <div class="right" v-if="activeItem">
                 <v-row style="margin: 0">
                     <v-row justify="start" class="btn-group">
-                        <div class="copy-btn mr-3" v-for="button in buttonList" :key="button">{{button}}</div>
+                        <v-btn
+                            class="mr-3"
+                            color="secondary"
+                            v-for="button in buttonList"
+                            :key="button"
+                        >{{button}}</v-btn>
                     </v-row>
                     <v-btn color="primary" @click="save">save</v-btn>
                 </v-row>
-
-                <div v-for="(locale, index) in list" :key="locale.name">
+                <div v-for="(locale, index) in localeList" :key="locale.name">
                     <v-text-field
-                            :label="locale.name.split('.')[0]"
-                            v-model="listModel[index]"
+                        :label="locale.name.split('.')[0]"
+                        v-model="model[locale.name]"
                     ></v-text-field>
                 </div>
             </div>
@@ -68,8 +27,92 @@
                 No key selected
             </div>
         </v-col>
-        <ItemEditor ref="ItemEditor" @update="updateItem" :checkExist="checkExist"></ItemEditor>
     </v-row>
 </template>
-<script src="./MainEditor.js"></script>
-<style scoped lang="scss" src="./MainEditor.scss"></style>
+<script>
+import fs from 'fs'
+import { mapState } from 'vuex'
+import ItemEditor from '@/views/ItemEditor'
+import TreeView from '@/views/MainEditor/TreeView'
+
+export default {
+    name: 'MainEditor',
+    components: { ItemEditor, TreeView },
+    data () {
+        return {
+            model: {},
+            buttonList: []
+        }
+    },
+    computed: {
+        ...mapState(['activeItem', 'localeList'])
+    },
+    methods: {
+        initEditor () {
+            if (this.activeItem) {
+                let model = {}
+                for (let locale of this.localeList) {
+                    model[locale.name] = this.activeItem[locale.name]
+                }
+                this.model = model
+                let split = this.activeItem.id.split('.')
+                this.buttonList = [this.activeItem.id, split[split.length - 1]]
+            }
+        },
+        save () {
+            let split = this.id.split('.')
+            for (let i = 0; i < this.list.length; i++) {
+                let locale = this.list[i]
+                let root = locale.data
+                for (let j = 0; j < split.length - 1; j++) {
+                    root = root[split[j]]
+                }
+                root[split[split.length - 1]] = this.listModel[i]
+            }
+            this.saveToDisk()
+        },
+        saveToDisk () {
+            let count = 0
+            for (let i = 0; i < this.list.length; i++) {
+                let locale = this.list[i]
+                fs.writeFile(
+                    this.activeSource + '/' + locale.name,
+                    JSON.stringify(locale.data),
+                    error => {
+                        if (error) {
+                            console.error(error)
+                        }
+                        count++
+                        if (count === this.list.length) {
+                            this.initEditor()
+                        }
+                    }
+                )
+            }
+        }
+    },
+    watch: {
+        activeItem: {
+            immediate: true,
+            handler: function () {
+                this.initEditor()
+            }
+        }
+    }
+}
+</script>
+<style scoped lang="scss">
+    .right {
+        padding: 15px;
+    }
+
+    .btn-group {
+        min-height: 30px;
+        padding-bottom: 10px;
+        margin: 0;
+
+        &::v-deep .v-btn {
+            text-transform: none;
+        }
+    }
+</style>
