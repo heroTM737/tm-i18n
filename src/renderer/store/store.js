@@ -35,7 +35,7 @@ const mutations = {
     activeItem (state, payload) {
         state.activeItem = payload
     },
-    updateItem (state, item) {
+    updateItemValue (state, item) {
         state.itemMap[item.id] = item
         TreeService.formatThenSaveFile(state)
     },
@@ -120,8 +120,8 @@ const actions = {
             store.commit('activeItem', item)
         }
     },
-    updateItem (store, item) {
-        store.commit('updateItem', item)
+    updateItemValue (store, item) {
+        store.commit('updateItemValue', item)
         store.dispatch('activeItemId', store.state.activeItem.id)
     },
     addItem (store, data) {

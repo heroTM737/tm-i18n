@@ -74,7 +74,7 @@ export default {
             }
         },
         save () {
-            this.$store.dispatch('updateItem', { id: this.activeItem.id, ...this.model })
+            this.$store.dispatch('updateItemValue', { id: this.activeItem.id, ...this.model })
         }
     },
     watch: {
