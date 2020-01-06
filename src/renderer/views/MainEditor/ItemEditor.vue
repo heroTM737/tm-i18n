@@ -32,11 +32,10 @@
 
 <script>
 
+import TreeService from '@/services/tree.service'
+
 export default {
     name: 'ItemEditor',
-    props: {
-        checkExist: Function
-    },
     data () {
         return {
             show: false,
@@ -46,7 +45,8 @@ export default {
             createParent: false,
             isAdd: false,
             isFolder: false,
-            item: null
+            item: null,
+            promise: null
         }
     },
     methods: {
@@ -69,14 +69,18 @@ export default {
                 this.isFolder = !!isFolder
             }
             this.show = true
+            return new Promise((resolve, reject) => {
+                this.promise = { resolve, reject }
+            })
         },
         submit () {
             if (this.formValid) {
-                let item = {
-                    name: this.name,
-                    parent: this.parent
-                }
-                this.$emit('update', item, this.isAdd, this.isFolder)
+                this.promise.resolve({
+                    id: TreeService.createItemId(this.parent, this.name),
+                    isAdd: this.isAdd,
+                    createParent: this.createParent,
+                    isFolder: this.isFolder
+                })
                 this.show = false
             } else {
                 this.$refs.form.validate()
@@ -85,14 +89,18 @@ export default {
         cancel () {
             this.show = false
             this.$refs.form.reset()
+            this.promise.reject(null)
         },
         parentRules (val) {
+            if (!val) {
+                return true
+            }
             if (val.includes(' ')) {
                 return 'Parent should not contain space'
             }
             if (!this.createParent) {
-                if (this.checkExist && this.checkExist(this.parent, val)) {
-                    return 'Name existed'
+                if (!TreeService.checkItemExist(this.parent)) {
+                    return 'Parent not existed'
                 }
             }
             return true
@@ -104,10 +112,15 @@ export default {
             if (val.includes(' ')) {
                 return 'Name should not contain space'
             }
-            if (this.checkExist && this.checkExist(this.parent, val)) {
+            if (TreeService.checkItemExist(TreeService.createItemId(this.parent, val))) {
                 return 'Name existed'
             }
             return true
+        }
+    },
+    watch: {
+        createParent () {
+            this.$refs.form.validate()
         }
     }
 }

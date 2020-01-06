@@ -44,30 +44,34 @@
                 </div>
             </div>
         </v-menu>
+        <ItemEditor ref="ItemEditor"></ItemEditor>
     </div>
 </template>
 
 <script>
 import { mapState } from 'vuex'
+import ItemEditor from '@/views/MainEditor/ItemEditor'
 
 export default {
     name: 'TreeView',
+    components: { ItemEditor },
     data () {
         return {
             search: '',
             contextMenuShow: false,
             x: 0,
             y: 0,
-            activeItem: null
+            activeItem: null,
+            items: []
         }
     },
     computed: {
-        ...mapState(['tree', 'localeList']),
-        items () {
-            return this.loopTree(this.tree, '')
-        }
+        ...mapState(['tree', 'localeList', 'forceUpdate'])
     },
     methods: {
+        initView () {
+            this.items = this.loopTree(this.tree, '')
+        },
         loopTree (root, parentId) {
             let data = []
             for (let i in root) {
@@ -96,16 +100,32 @@ export default {
             this.$store.dispatch('activeItemId', items[0])
         },
         addFolder () {
-            this.$refs.ItemEditor.open(null, true)
+            this.$refs.ItemEditor.open(null, true).then(
+                result => {
+                    this.$store.dispatch('addFolder', result)
+                }
+            )
         },
         addItem () {
-            this.$refs.ItemEditor.open(null)
+            this.$refs.ItemEditor.open(null).then(
+                result => {
+                    this.$store.dispatch('addItem', result)
+                }
+            )
         },
         editItem () {
             this.$refs.ItemEditor.open(this.activeItem)
         },
         deleteItem () {
 
+        }
+    },
+    watch: {
+        forceUpdate: {
+            immediate: true,
+            handler: function () {
+                this.initView()
+            }
         }
     }
 }

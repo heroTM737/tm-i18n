@@ -6,6 +6,7 @@ import { createPersistedState } from 'vuex-electron'
 import fs from 'fs'
 import _ from 'lodash'
 import TreeService from '@/services/tree.service'
+import sortObject from 'sort-object-keys'
 
 Vue.use(Vuex)
 
@@ -14,7 +15,8 @@ const state = {
     localeList: null,
     tree: null,
     itemMap: {},
-    activeItem: {}
+    activeItem: {},
+    forceUpdate: true
 }
 
 const mutations = {
@@ -32,6 +34,43 @@ const mutations = {
     },
     activeItem (state, payload) {
         state.activeItem = payload
+    },
+    updateItem (state, item) {
+        state.itemMap[item.id] = item
+        TreeService.formatThenSaveFile(state)
+    },
+    addItem (state, itemId) {
+        let split = itemId.split('.')
+        let root = state.tree
+        for (let i = 0; i < split.length - 1; i++) {
+            let name = split[i]
+            if (root[name]) {
+                root = root[name]
+            } else {
+                root[name] = {}
+            }
+        }
+        root[split[split.length - 1]] = itemId
+        let item = { id: itemId }
+        for (let locale of state.localeList) {
+            item[locale.name] = ''
+        }
+        state.itemMap[itemId] = item
+        state.activeItem = item
+        state.forceUpdate = !state.forceUpdate
+    },
+    addFolder (state, itemId) {
+        let split = itemId.split('.')
+        let root = state.tree
+        for (let i = 0; i < split.length; i++) {
+            let name = split[i]
+            if (root[name]) {
+                root = root[name]
+            } else {
+                root[name] = {}
+            }
+        }
+        state.forceUpdate = !state.forceUpdate
     }
 }
 
@@ -56,7 +95,7 @@ const actions = {
                 for (let i in root) {
                     let id = parentId ? parentId + '.' + i : i
                     if (typeof root[i] === 'object') {
-                        loopTree(root[i], id)
+                        root[i] = loopTree(root[i], id)
                     } else {
                         itemMap[id] = { id }
                         for (let locale of localeList) {
@@ -64,8 +103,10 @@ const actions = {
                         }
                     }
                 }
+                root = sortObject(root)
+                return root
             }
-            loopTree(tree, '')
+            tree = loopTree(tree, '')
 
             store.commit('activeSource', activeSource)
             store.commit('localeList', localeList)
@@ -78,6 +119,16 @@ const actions = {
         if (item) {
             store.commit('activeItem', item)
         }
+    },
+    updateItem (store, item) {
+        store.commit('updateItem', item)
+        store.dispatch('activeItemId', store.state.activeItem.id)
+    },
+    addItem (store, data) {
+        store.commit('addItem', data.id)
+    },
+    addFolder (store, data) {
+        store.commit('addFolder', data.id)
     }
 }
 

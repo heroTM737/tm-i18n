@@ -12,9 +12,10 @@
                             color="secondary"
                             v-for="button in buttonList"
                             :key="button"
-                        >{{button}}</v-btn>
+                        >{{button}}
+                        </v-btn>
                     </v-row>
-                    <v-btn color="primary" @click="save">save</v-btn>
+                    <v-btn color="primary" @click="save" :disabled="!needSave">save</v-btn>
                 </v-row>
                 <div v-for="(locale, index) in localeList" :key="locale.name">
                     <v-text-field
@@ -30,9 +31,8 @@
     </v-row>
 </template>
 <script>
-import fs from 'fs'
 import { mapState } from 'vuex'
-import ItemEditor from '@/views/ItemEditor'
+import ItemEditor from '@/views/MainEditor/ItemEditor'
 import TreeView from '@/views/MainEditor/TreeView'
 
 export default {
@@ -45,7 +45,17 @@ export default {
         }
     },
     computed: {
-        ...mapState(['activeItem', 'localeList'])
+        ...mapState(['activeItem', 'localeList']),
+        needSave () {
+            if (this.activeItem) {
+                for (let locale of this.localeList) {
+                    if (this.model[locale.name] !== this.activeItem[locale.name]) {
+                        return true
+                    }
+                }
+            }
+            return false
+        }
     },
     methods: {
         initEditor () {
@@ -55,40 +65,16 @@ export default {
                     model[locale.name] = this.activeItem[locale.name]
                 }
                 this.model = model
+                let buttonList = [this.activeItem.id]
                 let split = this.activeItem.id.split('.')
-                this.buttonList = [this.activeItem.id, split[split.length - 1]]
+                if (split.length > 1) {
+                    buttonList.push(split[split.length - 1])
+                }
+                this.buttonList = buttonList
             }
         },
         save () {
-            let split = this.id.split('.')
-            for (let i = 0; i < this.list.length; i++) {
-                let locale = this.list[i]
-                let root = locale.data
-                for (let j = 0; j < split.length - 1; j++) {
-                    root = root[split[j]]
-                }
-                root[split[split.length - 1]] = this.listModel[i]
-            }
-            this.saveToDisk()
-        },
-        saveToDisk () {
-            let count = 0
-            for (let i = 0; i < this.list.length; i++) {
-                let locale = this.list[i]
-                fs.writeFile(
-                    this.activeSource + '/' + locale.name,
-                    JSON.stringify(locale.data),
-                    error => {
-                        if (error) {
-                            console.error(error)
-                        }
-                        count++
-                        if (count === this.list.length) {
-                            this.initEditor()
-                        }
-                    }
-                )
-            }
+            this.$store.dispatch('updateItem', { id: this.activeItem.id, ...this.model })
         }
     },
     watch: {
