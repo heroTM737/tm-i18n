@@ -1,6 +1,5 @@
 import fs from 'fs'
 import formatJSON from 'format-json'
-import sortObject from 'sort-object-keys'
 import store from '@/store/store'
 
 const TreeService = {
@@ -34,12 +33,12 @@ const TreeService = {
                     root[i] = itemMap[id][localeName]
                 }
             }
-            root = sortObject(root)
             return root
         }
 
         for (let locale of state.localeList) {
             let json = JSON.parse(JSON.stringify(tree))
+            console.log(JSON.stringify(json))
             json = loopTree(json, '', locale.name)
             fs.writeFile(
                 state.activeSource + '/' + locale.name,

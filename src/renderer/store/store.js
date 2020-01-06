@@ -32,8 +32,8 @@ const mutations = {
     itemMap (state, payload) {
         state.itemMap = payload
     },
-    activeItem (state, payload) {
-        state.activeItem = payload
+    activeItemId (state, payload) {
+        state.activeItem = state.itemMap[payload]
     },
     updateItemValue (state, item) {
         state.itemMap[item.id] = item
@@ -55,16 +55,33 @@ const mutations = {
         for (let locale of state.localeList) {
             item[locale.name] = ''
         }
+
+        let loopTree = (root, parentId) => {
+            for (let i in root) {
+                let id = TreeService.createItemId(parentId, i)
+                if (typeof root[i] === 'object') {
+                    root[i] = loopTree(root[i], id)
+                }
+            }
+            root = sortObject(root)
+            return root
+        }
+        state.tree = loopTree(state.tree)
+
         state.itemMap[itemId] = item
         state.activeItem = item
         state.forceUpdate = new Date().getMilliseconds()
         TreeService.formatThenSaveFile(state)
     },
     copyItem (state, { oldItemId, newItemId }) {
-        state.itemMap[newItemId] = {
-            ...state.itemMap[oldItemId],
-            id: newItemId
+        let oldItem = state.itemMap[oldItemId]
+        let newItem = state.itemMap[newItemId]
+        console.log(oldItemId, oldItem)
+        console.log(newItemId, newItem)
+        for (let i in oldItem) {
+            newItem[i] = oldItem[i]
         }
+        newItem.id = newItemId
     },
     deleteItem (state, itemId) {
         let split = itemId.split('.')
@@ -72,8 +89,6 @@ const mutations = {
         for (let i = 0; i < split.length - 1; i++) {
             root = root[split[i]]
         }
-        console.log(itemId)
-        console.log(state.tree)
         delete root[split[split.length - 1]]
         delete state.itemMap[itemId]
         state.forceUpdate = new Date().getMilliseconds()
@@ -136,10 +151,7 @@ const actions = {
         }
     },
     activeItemId (store, itemId) {
-        let item = store.state.itemMap[itemId]
-        if (item) {
-            store.commit('activeItem', item)
-        }
+        store.commit('activeItemId', itemId)
     },
     updateItemValue (store, item) {
         store.commit('updateItemValue', item)
@@ -148,10 +160,11 @@ const actions = {
     addItem (store, data) {
         store.commit('addItem', data.id)
     },
-    updateItem (store, {oldItemId, id: newItemId}) {
+    updateItem (store, { oldItemId, id: newItemId }) {
         store.commit('addItem', newItemId)
-        store.commit('copyItem', oldItemId, newItemId)
+        store.commit('copyItem', { oldItemId, newItemId })
         store.commit('deleteItem', oldItemId)
+        store.commit('activeItemId', newItemId)
     },
     deleteItem (store, itemId) {
         store.commit('deleteItem', itemId)
