@@ -34,7 +34,7 @@
                     <v-icon>mdi-folder-plus</v-icon>
                     Add folder
                 </div>
-                <div @click="editItem">
+                <div @click="updateItem">
                     <v-icon>mdi-square-edit-outline</v-icon>
                     Edit
                 </div>
@@ -113,11 +113,15 @@ export default {
                 }
             )
         },
-        editItem () {
-            this.$refs.ItemEditor.open(this.activeItem)
+        updateItem () {
+            this.$refs.ItemEditor.open(this.activeItem).then(
+                result => {
+                    this.$store.dispatch('updateItem', result)
+                }
+            )
         },
-        deleteItem () {
-
+        deleteItem (itemID) {
+            this.$store.dispatch('deleteItem', itemID)
         }
     },
     watch: {

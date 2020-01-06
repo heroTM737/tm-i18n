@@ -76,6 +76,7 @@ export default {
         submit () {
             if (this.formValid) {
                 this.promise.resolve({
+                    oldItemId: this.item.id,
                     id: TreeService.createItemId(this.parent, this.name),
                     isAdd: this.isAdd,
                     createParent: this.createParent,

@@ -57,7 +57,27 @@ const mutations = {
         }
         state.itemMap[itemId] = item
         state.activeItem = item
-        state.forceUpdate = !state.forceUpdate
+        state.forceUpdate = new Date().getMilliseconds()
+        TreeService.formatThenSaveFile(state)
+    },
+    copyItem (state, { oldItemId, newItemId }) {
+        state.itemMap[newItemId] = {
+            ...state.itemMap[oldItemId],
+            id: newItemId
+        }
+    },
+    deleteItem (state, itemId) {
+        let split = itemId.split('.')
+        let root = state.tree
+        for (let i = 0; i < split.length - 1; i++) {
+            root = root[split[i]]
+        }
+        console.log(itemId)
+        console.log(state.tree)
+        delete root[split[split.length - 1]]
+        delete state.itemMap[itemId]
+        state.forceUpdate = new Date().getMilliseconds()
+        TreeService.formatThenSaveFile(state)
     },
     addFolder (state, itemId) {
         let split = itemId.split('.')
@@ -70,7 +90,8 @@ const mutations = {
                 root[name] = {}
             }
         }
-        state.forceUpdate = !state.forceUpdate
+        state.forceUpdate = new Date().getMilliseconds()
+        TreeService.formatThenSaveFile(state)
     }
 }
 
@@ -126,6 +147,14 @@ const actions = {
     },
     addItem (store, data) {
         store.commit('addItem', data.id)
+    },
+    updateItem (store, {oldItemId, id: newItemId}) {
+        store.commit('addItem', newItemId)
+        store.commit('copyItem', oldItemId, newItemId)
+        store.commit('deleteItem', oldItemId)
+    },
+    deleteItem (store, itemId) {
+        store.commit('deleteItem', itemId)
     },
     addFolder (store, data) {
         store.commit('addFolder', data.id)
