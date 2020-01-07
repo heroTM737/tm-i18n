@@ -66,7 +66,7 @@ export default {
         }
     },
     computed: {
-        ...mapState(['tree', 'localeList', 'forceUpdate'])
+        ...mapState(['tree', 'localeList', 'lastUpdate'])
     },
     methods: {
         initView () {
@@ -125,7 +125,7 @@ export default {
         }
     },
     watch: {
-        forceUpdate: {
+        lastUpdate: {
             immediate: true,
             handler: function () {
                 this.initView()

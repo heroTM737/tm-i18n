@@ -16,7 +16,7 @@ const state = {
     tree: null,
     itemMap: {},
     activeItem: {},
-    forceUpdate: true
+    lastUpdate: new Date().getMilliseconds()
 }
 
 const mutations = {
@@ -37,7 +37,6 @@ const mutations = {
     },
     updateItemValue (state, item) {
         state.itemMap[item.id] = item
-        TreeService.formatThenSaveFile(state)
     },
     addItem (state, itemId) {
         let split = itemId.split('.')
@@ -70,14 +69,11 @@ const mutations = {
 
         state.itemMap[itemId] = item
         state.activeItem = item
-        state.forceUpdate = new Date().getMilliseconds()
-        TreeService.formatThenSaveFile(state)
+        state.lastUpdate = new Date().getMilliseconds()
     },
     copyItem (state, { oldItemId, newItemId }) {
         let oldItem = state.itemMap[oldItemId]
         let newItem = state.itemMap[newItemId]
-        console.log(oldItemId, oldItem)
-        console.log(newItemId, newItem)
         for (let i in oldItem) {
             newItem[i] = oldItem[i]
         }
@@ -91,8 +87,7 @@ const mutations = {
         }
         delete root[split[split.length - 1]]
         delete state.itemMap[itemId]
-        state.forceUpdate = new Date().getMilliseconds()
-        TreeService.formatThenSaveFile(state)
+        state.lastUpdate = new Date().getMilliseconds()
     },
     addFolder (state, itemId) {
         let split = itemId.split('.')
@@ -105,8 +100,7 @@ const mutations = {
                 root[name] = {}
             }
         }
-        state.forceUpdate = new Date().getMilliseconds()
-        TreeService.formatThenSaveFile(state)
+        state.lastUpdate = new Date().getMilliseconds()
     }
 }
 
@@ -156,21 +150,26 @@ const actions = {
     updateItemValue (store, item) {
         store.commit('updateItemValue', item)
         store.dispatch('activeItemId', store.state.activeItem.id)
+        TreeService.formatThenSaveFile(store.state)
     },
     addItem (store, data) {
         store.commit('addItem', data.id)
+        TreeService.formatThenSaveFile(store.state)
     },
     updateItem (store, { oldItemId, id: newItemId }) {
         store.commit('addItem', newItemId)
         store.commit('copyItem', { oldItemId, newItemId })
         store.commit('deleteItem', oldItemId)
         store.commit('activeItemId', newItemId)
+        TreeService.formatThenSaveFile(store.state)
     },
     deleteItem (store, itemId) {
         store.commit('deleteItem', itemId)
+        TreeService.formatThenSaveFile(store.state)
     },
     addFolder (store, data) {
         store.commit('addFolder', data.id)
+        TreeService.formatThenSaveFile(store.state)
     }
 }
 

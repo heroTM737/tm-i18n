@@ -38,7 +38,6 @@ const TreeService = {
 
         for (let locale of state.localeList) {
             let json = JSON.parse(JSON.stringify(tree))
-            console.log(JSON.stringify(json))
             json = loopTree(json, '', locale.name)
             fs.writeFile(
                 state.activeSource + '/' + locale.name,
