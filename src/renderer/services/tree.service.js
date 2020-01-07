@@ -69,6 +69,12 @@ const TreeService = {
     },
     createItemId (parent, name) {
         return parent ? parent + '.' + name : name
+    },
+    convertIdToValue (id) {
+        return id.replace(
+            /\.?([A-Z])/g,
+            (x, y) => ' ' + y.toLowerCase()
+        ).replace(/^_/, '')
     }
 }
 

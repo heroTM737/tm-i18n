@@ -52,7 +52,11 @@ const mutations = {
         root[split[split.length - 1]] = itemId
         let item = { id: itemId }
         for (let locale of state.localeList) {
-            item[locale.name] = ''
+            if (locale.name.includes('en')) {
+                item[locale.name] = TreeService.convertIdToValue(itemId)
+            } else {
+                item[locale.name] = ''
+            }
         }
 
         let loopTree = (root, parentId) => {
