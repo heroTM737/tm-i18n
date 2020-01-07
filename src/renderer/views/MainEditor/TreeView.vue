@@ -120,8 +120,8 @@ export default {
                 }
             )
         },
-        deleteItem (itemID) {
-            this.$store.dispatch('deleteItem', itemID)
+        deleteItem () {
+            this.$store.dispatch('deleteItem', this.activeItem.id)
         }
     },
     watch: {
