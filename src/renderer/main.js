@@ -7,6 +7,8 @@ import store from './store/store'
 import i18n from './plugins/i18n'
 import vuetify from './plugins/vuetify'
 import './plugins/vue-notification'
+import './utils/const'
+import './utils/utils'
 
 if (!process.env.IS_WEB) Vue.use(require('vue-electron'))
 Vue.config.productionTip = false

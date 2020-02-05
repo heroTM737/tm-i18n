@@ -12,6 +12,7 @@
                             color="secondary"
                             v-for="button in buttonList"
                             :key="button"
+                            @click="copy(button)"
                         >{{button}}
                         </v-btn>
                     </v-row>
@@ -75,6 +76,9 @@ export default {
         },
         save () {
             this.$store.dispatch('updateItemValue', { id: this.activeItem.id, ...this.model })
+        },
+        copy (text) {
+            this.$utils.copyToClipboard(text, text + ' copied to clipboard')
         }
     },
     watch: {
