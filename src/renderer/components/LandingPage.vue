@@ -6,26 +6,32 @@
         <div style="color: #fff" class="pt-5 pb-1">
             Recent source
         </div>
-        <div>
-            <v-btn v-for="(item, index) in recentList" :key="index" @click="readDir(index)">
-                {{item}}
+        <div v-for="(item, index) in recentList" :key="index" class="mb-3">
+            <v-btn @click="readDir(index)" class="mr-3">
+                {{item.name}}
             </v-btn>
+            <span style="color: #fff" >{{item.src}}</span>
         </div>
-
     </div>
 </template>
 
 <script>
 import { mapState } from 'vuex'
+import fs from 'fs'
+import electron from 'electron'
 
-const electron = require('electron')
 export default {
     name: 'landing-page',
     data () {
+        let recentList = null
+        let fileName = 'recent.json'
+        if (fs.existsSync(fileName)) {
+            recentList = JSON.parse(fs.readFileSync(fileName, 'utf8'))
+        } else {
+            recentList = []
+        }
         return {
-            recentList: [
-                'src/locales'
-            ]
+            recentList: recentList
         }
     },
     computed: {
@@ -35,8 +41,7 @@ export default {
     },
     methods: {
         readDir (index) {
-            let source = this.recentList[index]
-            this.$store.dispatch('activeSource', source)
+            this.$store.dispatch('activeSource', this.recentList[index].src)
             this.$nextTick(() => this.$router.push('/editor'))
         },
         pickSource () {

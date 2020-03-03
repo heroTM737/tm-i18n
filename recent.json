@@ -1,0 +1,14 @@
+[
+    {
+        "name": "local",
+        "src": "src/locales"
+    },
+    {
+        "name": "fptai-v4-console",
+        "src": "E:/Project/fpt-corp/fptai-v4-console/frontend/src/locales"
+    },
+    {
+        "name": "fptai-callcenter",
+        "src": "E:/Project/fpt-corp/fptai-callcenter/frontend/src/locales"
+    }
+]

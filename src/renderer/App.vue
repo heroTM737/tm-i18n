@@ -1,8 +1,8 @@
 <template>
     <v-app id="app" dark>
         <v-app-bar app dense>
-            <router-link to="/" class="mr-5">Home</router-link>
-            <router-link to="/editor">Editor</router-link>
+            <router-link to="/" class="mr-5 no-underline">Home</router-link>
+            <router-link to="/editor" class="mr-5 no-underline">Editor</router-link>
         </v-app-bar>
         <v-content>
             <router-view></router-view>
@@ -26,5 +26,9 @@ export default {
 
     html, body {
         overflow: hidden !important;
+    }
+
+    .no-underline {
+        text-decoration: none;
     }
 </style>
